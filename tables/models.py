@@ -25,22 +25,20 @@ class Table(models.Model):
 class Reservation(models.Model):
     table = models.ForeignKey("Table", on_delete=models.CASCADE)
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    date = models.DateField(default=now)   # ✅ default = today
+    date = models.DateField(default=now)
     time_slot = models.CharField(max_length=50)
     status = models.CharField(
         max_length=20,
-        choices=[('pending', 'Pending'), ('confirmed', 'Confirmed'), ('cancelled', 'Cancelled')],
-        default='pending'
+        choices=[('Booked', 'Booked')],
+        default='Booked'
     )
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
-        if self.status in ['pending', 'confirmed']:
-            self.table.status = 'booked'
-        elif self.status == 'cancelled':
-            self.table.status = 'available'
-        self.table.save()
+        if self.status in ['Booked']:
+            self.table.status = 'Booked'
+            self.table.save()
 
     def delete(self, *args, **kwargs):
         self.table.status = 'available'
