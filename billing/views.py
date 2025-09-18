@@ -19,7 +19,7 @@ class BillViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         bill = serializer.save(cashier=request.user)
 
-        # custom response with full bill details
+
         return Response(
             {
                 "order": bill.order.id,

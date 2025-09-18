@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import DishReview, ServiceReview
 
 
-# ✅
+
 class DishReviewSerializer(serializers.ModelSerializer):
     customer = serializers.HiddenField(default=serializers.CurrentUserDefault())
 

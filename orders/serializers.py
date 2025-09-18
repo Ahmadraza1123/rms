@@ -1,9 +1,8 @@
 from rest_framework import serializers
-
-from tables.models import  Reservation
+from tables.models import Reservation
 from .models import Order, OrderItem
 from menu.models import MenuItem
-
+from sender.email_service import send_invoice_email
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -31,7 +30,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
         return obj.item_total()
 
 
-
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, write_only=True)
     order_items = OrderItemSerializer(source='items', many=True, read_only=True)
@@ -51,7 +49,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'order_items',
             'total_amount',
         ]
-        read_only_fields = ['waiter','created_at', 'total_amount']
+        read_only_fields = ['waiter', 'created_at', 'total_amount']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items', [])
@@ -62,14 +60,31 @@ class OrderSerializer(serializers.ModelSerializer):
             validated_data['waiter'] = request.user
 
         validated_data['status'] = 'pending'
-        table_id = validated_data.get("table")
-        table = Reservation.objects.get(table=table_id)
-        validated_data['customer'] = table.customer
+        table_obj = validated_data.get("table")
+
+
+        reservation = Reservation.objects.filter(table=table_obj).first()
+        if reservation:
+            validated_data['customer'] = reservation.customer
+        else:
+
+            validated_data['customer'] = request.user
+
+
         order = Order.objects.create(**validated_data)
 
 
         for item_data in items_data:
             OrderItem.objects.create(order=order, **item_data)
+
+
+        if order.customer and order.customer.email:
+            send_invoice_email(
+                to_email=order.customer.email,
+                subject="Order Confirmation",
+                message=f"Dear {order.customer.username},\n\nYour order #{order.id} "
+                        f"has been placed successfully.\nTotal: Rs.{order.total_amount()}.\n\nThank you!"
+            )
 
         return order
 

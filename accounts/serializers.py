@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from sender.email_service import send_email
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -18,6 +19,15 @@ class UserSerializer(serializers.ModelSerializer):
         )
         user.set_password(validated_data['password'])
         user.save()
+
+
+        if user.email:
+            send_email(
+                to_email=user.email,
+                subject="Welcome to Our Restaurant!",
+                message=f"Hello {user.username},\nThank you for signing up with us!"
+            )
+
         return user
 
 
@@ -25,8 +35,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
-
         token['username'] = user.username
         token['email'] = user.email
         token['role'] = user.role
