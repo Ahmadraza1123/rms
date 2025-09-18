@@ -2,8 +2,6 @@ from django.db import models
 from accounts.models import User
 from django.utils import timezone
 from django.conf import settings
-from django.utils.timezone import now
-
 
 
 def today_date():
@@ -21,11 +19,10 @@ class Table(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tables")
 
 
-
 class Reservation(models.Model):
     table = models.ForeignKey("Table", on_delete=models.CASCADE)
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    date = models.DateField(default=now)
+    date = models.DateField(default=today_date)
     time_slot = models.CharField(max_length=50)
     status = models.CharField(
         max_length=20,
@@ -33,10 +30,13 @@ class Reservation(models.Model):
         default='Booked'
     )
 
+    class Meta:
+
+        unique_together = ('table', 'date', 'time_slot')
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-
-        if self.status in ['Booked']:
+        if self.status == 'Booked':
             self.table.status = 'Booked'
             self.table.save()
 

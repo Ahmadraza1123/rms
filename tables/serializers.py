@@ -12,21 +12,20 @@ class TableSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-
 class ReservationSerializer(serializers.ModelSerializer):
     customer = serializers.ReadOnlyField(source='customer.id')
 
     class Meta:
         model = Reservation
-        fields = ['id', 'table', 'customer','time_slot', 'status']
-
+        fields = ['id', 'table', 'customer', 'date', 'time_slot', 'status']
 
     def validate(self, data):
         table = data.get("table")
+        date = data.get("date")
         time_slot = data.get("time_slot")
 
-
-        if Reservation.objects.filter(table=table, time_slot=time_slot).exists():
-            raise serializers.ValidationError("This table is already booked for the selected time slot.")
-
+        if Reservation.objects.filter(table=table, date=date, time_slot=time_slot).exists():
+            raise serializers.ValidationError(
+                "This table is already booked for the selected date and time slot."
+            )
         return data
